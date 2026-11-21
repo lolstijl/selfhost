@@ -1,0 +1,25 @@
+services:
+  tinyauth:
+    image: ghcr.io/steveiliop56/tinyauth:v3.2.0
+    restart: unless-stopped
+    environment:
+      - SECRET=${SECRET}
+      - APP_URL=https://auth.anthonys.app
+      - USERS=${USERS}
+    labels:
+      - "traefik.enable=true"
+      # Route auth.anthonys.app to TinyAuth
+      - "traefik.http.routers.tinyauth.rule=Host(`auth.anthonys.app`)"
+      - "traefik.http.routers.tinyauth.entrypoints=https"
+      - "traefik.http.routers.tinyauth.tls=true"
+      - "traefik.http.services.tinyauth.loadbalancer.server.port=3000"
+      # Define the reusable forwardAuth middleware for other containers
+      - "traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth:3000/api/auth/traefik"
+      - "traefik.http.middlewares.tinyauth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.tinyauth.forwardauth.authResponseHeaders=Remote-User,Remote-Name,Remote-Email,Remote-Groups"
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true
